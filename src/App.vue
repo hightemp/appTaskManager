@@ -85,7 +85,17 @@
       :selected.sync="aSelected"
       selection="multiple"
       :loading="bLoading"
-    />
+    >
+      <template v-slot:body-cell-name="props">
+        <q-td :props="props">
+          <img
+            style="width:16px; float:left; margin-right: 10px;"
+            :src="'data:image/png;base64,'+props.value.icon"
+          />
+          {{ props.value.value }}
+        </q-td>
+      </template>
+    </q-table>
     <!--div class="q-mt-md">
       Selected: {{ JSON.stringify(aSelected) }}
     </div-->
@@ -240,11 +250,12 @@ import Vue from 'vue';
 import Component from 'vue-class-component';
 import child_process from 'child_process';
 
-import draggable from 'vuedraggable'
+import draggable from 'vuedraggable';
 
-import fkill from 'fkill'
+// import iconExtractor from 'icon-extractor';
+var iconExtractor = require('icon-extractor');
 
-import moment from 'moment'
+import moment from 'moment';
 
 const aFields = [
   'pid',
@@ -303,17 +314,19 @@ export default class App extends Vue {
 
   aSelected: any[] = []
 
+  oIconCache: any = {}
+
   aVisibleColumns: string[] = aFields.slice()
   bEnableFilter: boolean = false
   oPagination: any = { rowsPerPage: 0 }
   sFilterString: string = ''
   iRowCount: number = 100000
   aColumns: any[] = [
-    { name: 'name', align: 'left', label: 'name', field: 'name', sortable: true, classes: 'name-column', headerClasses: 'name-column' },
+    { name: 'name', align: 'left', label: 'name', field: 'name', sortable: true, classes: 'name-column', headerClasses: 'name-column', format: (v, r) => ({ value: v, icon: this.oIconCache[r.path] }) },
     { name: 'pid', align: 'right', label: 'pid', field: 'pid', sortable: true, classes: 'pid-column', headerClasses: 'pid-column' },
     { name: 'ppid', align: 'right', label: 'ppid', field: 'ppid', sortable: true, classes: 'ppid-column', headerClasses: 'ppid-column' },
-    { name: 'vmem', align: 'right', label: 'vmem', field: 'vmem', sortable: true, format: v => this.fnFormatSize(v) },
-    { name: 'pmem', align: 'right', label: 'pmem', field: 'pmem', sortable: true, format: v => this.fnFormatSize(v) },
+    { name: 'vmem', align: 'right', label: 'vmem', field: 'vmem', sortable: true, format: v => this.fnFormatSize(v), sort: (a, b, rowA, rowB) => parseInt(a, 10) - parseInt(b, 10)  },
+    { name: 'pmem', align: 'right', label: 'pmem', field: 'pmem', sortable: true, format: v => this.fnFormatSize(v), sort: (a, b, rowA, rowB) => parseInt(a, 10) - parseInt(b, 10) },
     { name: 'cpu', align: 'right', label: 'cpu', field: 'cpu', sortable: true },
     { name: 'cmdline', align: 'left', label: 'cmdline', field: 'cmdline', sortable: true },
     { name: 'path', align: 'left', label: 'path', field: 'path', sortable: true },
@@ -390,13 +403,24 @@ export default class App extends Vue {
     `${oThis.aSelected.length} record${oThis.aSelected.length > 1 ? 's' : ''} selected of ${oThis.aTasks.length}`
   }
 
+  fnSafelyKill(pid: number, signal: string) 
+  {
+    if (signal && process.platform!='win32') {
+      process.kill(pid, signal);
+    } else {
+      process.kill(pid);
+    }
+  }
+
   fnTerminateSelected()
   {
     var oThis = this;
 
     oThis.aSelected.forEach((oItem: any) => {
       // console.log('fnTerminateSelected', oItem);
-      fkill(oItem.pid);
+      oThis.fnSafelyKill(oItem.pid, 'SIGTERM');
+      oThis.fnSafelyKill(oItem.pid, 'SIGKILL');
+      // fkill(oItem.pid);
     });
   }
 
@@ -444,17 +468,31 @@ export default class App extends Vue {
     oWatcherProcess.on('message', (aTasks) => {
       aTasks = aTasks.map((v:any) => {
         v.cpu = Math.round(v.cpu*100)/100;
-        v.type = 'none'
+        v.type = 'none';
+        v.icon = '';
+
         return v;
       })
 
       Vue.set(oThis, 'aTasks', aTasks);
+
+      aTasks.map((v:any) => {
+        if (!oThis.oIconCache[v.path]) {
+          iconExtractor.getIcon(v.pid, v.path);
+        }
+      });
+
       setTimeout(oThis.fnUpdate, oThis.iRefreshTimeout);
       oThis.bLoading = false;
     });
 
     oWatcherProcess.on('exit', (iCode: number, sSignal: string) => {
-      console.log('exit - iCode, sSignal', iCode, sSignal);
+      console.log('exit - iCode, sSignal', iCode, sSignal);      
+      oThis.fnUpdate();
+    });
+
+    oWatcherProcess.on('close', () => {
+      console.log('close');
       oThis.fnUpdate();
     });
 
@@ -490,6 +528,24 @@ export default class App extends Vue {
   created()
   {
     var oThis = this;
+
+    iconExtractor.emitter.on(
+      'icon', 
+      function(data: any) 
+      {
+        //if (data.Context) {
+          var sPath = oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].path;
+          oThis.oIconCache[sPath] = data.Base64ImageData;
+          console.log('fnStartWatcher', sPath, { img:data.Base64ImageData });
+          // oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].icon = data.Base64ImageData;
+        //}
+        /*
+        console.log('Here is my context: ' + data.Context);
+        console.log('Here is the path it was for: ' + data.Path);
+        console.log('Here is the base64 image: ' + data.Base64ImageData);
+        */
+      }
+    );
 
     oThis.oFiltersListSelectedItem = oThis.aPreparedFiltersList[0];
 
