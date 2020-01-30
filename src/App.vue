@@ -88,7 +88,14 @@
     >
       <template v-slot:body-cell-name="props">
         <q-td :props="props">
+          <q-icon 
+            v-if="!props.value.icon"
+            name="watch_later"
+            color="grey-1"
+            size="16px"
+          />
           <img
+            v-if="props.value.icon"
             style="width:16px; float:left; margin-right: 10px;"
             :src="'data:image/png;base64,'+props.value.icon"
           />
@@ -536,7 +543,7 @@ export default class App extends Vue {
         //if (data.Context) {
           var sPath = oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].path;
           oThis.oIconCache[sPath] = data.Base64ImageData;
-          console.log('fnStartWatcher', sPath, { img:data.Base64ImageData });
+          // console.log('fnStartWatcher', sPath, { img:data.Base64ImageData });
           // oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].icon = data.Base64ImageData;
         //}
         /*
