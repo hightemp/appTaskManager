@@ -115,9 +115,9 @@
             class="col full-height"
           >
             <q-tab-panel name="columns" class="columns full-height">
-              <div class="col-auto">
+              <!--div class="col-auto">
 
-              </div>
+              </div-->
               <q-list
                 bordered 
                 separator
@@ -216,6 +216,23 @@
   td:nth-child(4), th:nth-child(4)
     position: sticky
     left: calc(214px + 44px + 53px) !important
+  td:first-child,
+  th:first-child,
+  .name-column,
+  .pid-column,
+  .ppid-column
+    background-color: #eee !important
+  th:first-child,
+  th.name-column,
+  th.pid-column,
+  th.ppid-column
+    background-color: #ddd !important
+  .name-column
+    width: 214px
+  .pid-column
+    width: 53px
+  .ppid-column
+    width: 57px
 </style>
 
 <script lang="ts">
@@ -271,7 +288,7 @@ export default class App extends Vue {
 
   sOptionsSelectedTab: string = "columns"
 
-  bShowSystenInfoPanel: boolean = true
+  bShowSystenInfoPanel: boolean = false
 
   bShowOptionsWindow: boolean = false
   bShowFiltersListEditWindow: boolean = false
@@ -292,11 +309,11 @@ export default class App extends Vue {
   sFilterString: string = ''
   iRowCount: number = 100000
   aColumns: any[] = [
-    { name: 'name', align: 'left', label: 'name', field: 'name', sortable: true },
-    { name: 'pid', align: 'right', label: 'pid', field: 'pid', sortable: true },
-    { name: 'ppid', align: 'right', label: 'ppid', field: 'ppid', sortable: true },
-    { name: 'vmem', align: 'right', label: 'vmem', field: 'vmem', sortable: true },
-    { name: 'pmem', align: 'right', label: 'pmem', field: 'pmem', sortable: true },
+    { name: 'name', align: 'left', label: 'name', field: 'name', sortable: true, classes: 'name-column', headerClasses: 'name-column' },
+    { name: 'pid', align: 'right', label: 'pid', field: 'pid', sortable: true, classes: 'pid-column', headerClasses: 'pid-column' },
+    { name: 'ppid', align: 'right', label: 'ppid', field: 'ppid', sortable: true, classes: 'ppid-column', headerClasses: 'ppid-column' },
+    { name: 'vmem', align: 'right', label: 'vmem', field: 'vmem', sortable: true, format: v => this.fnFormatSize(v) },
+    { name: 'pmem', align: 'right', label: 'pmem', field: 'pmem', sortable: true, format: v => this.fnFormatSize(v) },
     { name: 'cpu', align: 'right', label: 'cpu', field: 'cpu', sortable: true },
     { name: 'cmdline', align: 'left', label: 'cmdline', field: 'cmdline', sortable: true },
     { name: 'path', align: 'left', label: 'path', field: 'path', sortable: true },
@@ -386,10 +403,13 @@ export default class App extends Vue {
   fnStopWatcher()
   {
     if (oWatcherProcess && oWatcherProcess.kill) {
-      oWatcherProcess.send('exit');
+      /*
+      oWatcherProcess.send('exit');      
 
       oWatcherProcess.kill('SIGTERM');
       oWatcherProcess.kill('SIGKILL');
+      */
+      oWatcherProcess.disconnect();
     }
   }
 
