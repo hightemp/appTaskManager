@@ -91,15 +91,28 @@
           <q-icon 
             v-if="!props.value.icon"
             name="watch_later"
-            color="grey-1"
+            color="grey-4"
             size="16px"
-          />
+          /> 
           <img
             v-if="props.value.icon"
             style="width:16px; float:left; margin-right: 10px;"
             :src="'data:image/png;base64,'+props.value.icon"
           />
           {{ props.value.value }}
+          <div class="spacer"></div>
+        </q-td>
+      </template>
+      <template v-slot:body-cell-pid="props">
+        <q-td :props="props">
+          {{ props.value }}
+          <div class="spacer"></div>
+        </q-td>
+      </template>
+      <template v-slot:body-cell-ppid="props">
+        <q-td :props="props">
+          {{ props.value }}
+          <div class="spacer"></div>
         </q-td>
       </template>
     </q-table>
@@ -132,9 +145,6 @@
             class="col full-height"
           >
             <q-tab-panel name="columns" class="columns full-height">
-              <!--div class="col-auto">
-
-              </div-->
               <q-list
                 bordered 
                 separator
@@ -229,27 +239,33 @@
     left: 44px !important
   td:nth-child(3), th:nth-child(3)
     position: sticky
-    left: calc(214px + 44px) !important
+    left: calc(266px + 44px) !important
   td:nth-child(4), th:nth-child(4)
     position: sticky
-    left: calc(214px + 44px + 53px) !important
+    left: calc(266px + 44px + 86px) !important
   td:first-child,
   th:first-child,
   .name-column,
   .pid-column,
   .ppid-column
     background-color: #eee !important
+    word-break: break-all
+    overflow-wrap: break-word
+    white-space: normal
   th:first-child,
   th.name-column,
   th.pid-column,
   th.ppid-column
     background-color: #ddd !important
-  .name-column
-    width: 214px
-  .pid-column
-    width: 53px
-  .ppid-column
-    width: 57px
+  .name-column,
+  .name-column .spacer
+    width: 250px !important
+  .pid-column,
+  .pid-column .spacer
+    width: 70px !important
+  .ppid-column,
+  .ppid-column .spacer
+    width: 70px !important
 </style>
 
 <script lang="ts">
@@ -541,10 +557,15 @@ export default class App extends Vue {
       function(data: any) 
       {
         //if (data.Context) {
-          var sPath = oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].path;
-          oThis.oIconCache[sPath] = data.Base64ImageData;
-          // console.log('fnStartWatcher', sPath, { img:data.Base64ImageData });
-          // oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].icon = data.Base64ImageData;
+        var oFoundItem = oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0];
+        
+        if (!oFoundItem) {
+          return;
+        }
+        // var sPath = oFoundItem.path;
+        oThis.oIconCache[oFoundItem.path] = data.Base64ImageData;
+        // console.log('fnStartWatcher', sPath, { img:data.Base64ImageData });
+        // oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].icon = data.Base64ImageData;
         //}
         /*
         console.log('Here is my context: ' + data.Context);
