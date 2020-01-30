@@ -41,7 +41,7 @@ module.exports = function(ctx) {
       //            (fastest compile time; minimum bundle size; most tedious)
       // * true   - Import everything from Quasar
       //            (not treeshaking Quasar; biggest bundle size; convenient)
-      all: false,
+      all: 'auto',
 
       components: [
         'QLayout',
@@ -56,7 +56,11 @@ module.exports = function(ctx) {
         'QList',
         'QItem',
         'QItemSection',
-        'QItemLabel'
+        'QItemLabel',
+        'QTable',
+        'QTh',
+        'QTr',
+        'QTd',
       ],
 
       directives: ['Ripple'],
