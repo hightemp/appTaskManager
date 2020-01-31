@@ -18,7 +18,8 @@
           dense
           square 
           outlined 
-          v-model="oFiltersListSelectedItem" 
+          clearable
+          v-model="oConfig.m_oSelectedPreparedFiltersListItem" 
           :options="aPreparedFiltersList" 
           label="Prepared filter" 
         />
@@ -69,18 +70,18 @@
       </div>
     </div>
     <q-table
-      class="col sticky-header-column-table"      
+      class="col sticky-header-column-table full-height"      
       dense
       flat
       square
       row-key="pid"
-      :table-style="'max-width: 100vw; max-height: calc(100vh - 42px ' + (bShowSystenInfoPanel ? '- 200px' : '- 43px') + ')'"
+      :table-style="'height:100%; max-width: 100vw; max-height: calc(100vh - 42px ' + (bShowSystenInfoPanel ? '- 200px' : '- 43px') + ')'"
       :selected-rows-label="fnGetSelectionDescription"
       :filter="sFilterString"
-      :visible-columns="aVisibleColumns"
+      :visible-columns="oConfig.aVisibleColumns"
       :rows-per-page-options="[0]"
       :pagination.sync="oPagination"
-      :data="aTasks"
+      :data="aFilteredTasks"
       :columns="aColumns"
       :selected.sync="aSelected"
       selection="multiple"
@@ -124,8 +125,10 @@
       v-model="bShowOptionsWindow"
     >
       <q-card class="column" style="width: 500px; height: 100vh">
-        <q-card-section>
+        <q-card-section class="row items-center q-pb-none">
           <div class="text-h6">Options</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
 
         <q-card-section class="col row q-pt-none">
@@ -158,7 +161,7 @@
                   :key="iIndex"
                 >
                   <q-item-section side top>
-                    <q-checkbox disabled v-model="aVisibleColumns" :val="oItem.field" />
+                    <q-checkbox disabled v-model="oConfig.aVisibleColumns" :val="oItem.field" />
                   </q-item-section>                    
                   <q-item-section>
                     {{ oItem.label }}
@@ -171,7 +174,7 @@
                     :key="iIndex"
                   >
                     <q-item-section side top>
-                      <q-checkbox v-model="aVisibleColumns" :val="oItem.field" />
+                      <q-checkbox v-model="oConfig.aVisibleColumns" :val="oItem.field" />
                     </q-item-section>                    
                     <q-item-section>
                       {{ oItem.label }}
@@ -183,7 +186,7 @@
 
             <q-tab-panel name="other">
               <q-input
-                v-model.number="iRefreshTimeout"
+                v-model.number="oConfig.iRefreshTimeout"
                 type="number"
                 filled
                 style="max-width: 200px"
@@ -192,10 +195,50 @@
             </q-tab-panel>
           </q-tab-panels>
         </q-card-section>
+      </q-card>
+    </q-dialog>
 
-        <q-card-actions align="right" class="bg-white text-teal">
-          <q-btn flat label="OK" v-close-popup />
-        </q-card-actions>
+    <q-dialog
+      v-model="bShowFiltersListEditWindow"
+    >
+      <q-card class="column" style="width: 700px; height: 100vh">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">Prepared filters</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="col row q-pt-none">
+          <div class="col-6 column" style="border-right: 1px solid #eee">
+            <div class="col-auto align-right">
+              <q-btn flat dense class="" icon="add" @click="fnAddFilterListItem" />
+              <q-btn flat dense class="" icon="delete" @click="fnDeleteFilterListItem" />
+            </div>
+            <list-with-filter
+              :aList="oConfig.aFiltersList"
+              :iSelectedIndex="oConfig.iSelectFilterListItem"
+              @item-click="fnSelectFilterListItem"
+            />
+          </div>
+          <div class="col full-height q-pa-sm" style="overflow-y:scroll">
+            <template v-if="oSelectedFiltersListItem">
+              <div class="q-pa-sm">
+                <q-input dense v-model="oSelectedFiltersListItem.sTitle" type="text" label="Label" />
+              </div>
+              <div class="text-h6">Filters</div>
+              <div class="q-pa-sm">
+                <q-input
+                  dense 
+                  v-for="(sFieldName, iIndex) in aFields"
+                  :key="iIndex"
+                  v-model="oSelectedFiltersListItem.oFilters[sFieldName]" 
+                  type="text" 
+                  :label="sFieldName"
+                />
+              </div>
+            </template>
+          </div>
+        </q-card-section>
       </q-card>
     </q-dialog>
   </div>
@@ -270,38 +313,21 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import Component from 'vue-class-component';
+// import Component from 'vue-class-component';
+import { Component, Mixin, Mixins } from 'vue-mixin-decorator';
+import { Watch, Prop } from 'vue-property-decorator'
 import child_process from 'child_process';
 
 import draggable from 'vuedraggable';
 
-// import iconExtractor from 'icon-extractor';
+import Config from './mixins/config';
+import { aFields, aFixedColumns } from './mixins/config';
+
+import ListWithFilter from './components/ListWithFilter.vue';
+
 var iconExtractor = require('icon-extractor');
 
 import moment from 'moment';
-
-const aFields = [
-  'pid',
-  'ppid',
-  'name',
-  'path',
-  'threads',
-  'owner',
-  'priority',
-  'cmdline',
-  'starttime',
-  'vmem',
-  'pmem',
-  'cpu',
-  'utime',
-  'stime',  
-];
-
-const aFixedColumns = [
-  'pid',
-  'ppid',
-  'name'
-];
 
 enum ProcType {
   none = 'none',
@@ -313,13 +339,26 @@ enum ProcType {
 const sProcessWatcherPath = "./src/child_process/process_watcher.js";
 var oWatcherProcess: any;
 
+interface IMixinInterface extends 
+  Config 
+{}
+
+function $log(...aArguments:any[]) {
+  console.log('>>', ...aArguments);
+  return aArguments[0];
+}
+
+var oApplication: any = null;
+
 @Component({
   components: {
-    draggable
+    draggable,
+    'list-with-filter': ListWithFilter
   }
 })
-export default class App extends Vue {
-
+export default class App extends Mixins<Config>(
+  Config
+) {
   sOptionsSelectedTab: string = "columns"
 
   bShowSystenInfoPanel: boolean = false
@@ -330,22 +369,16 @@ export default class App extends Vue {
   bLoading: boolean = true
 
   aTasks: any[] = []
-  iRefreshTimeout: number = 2000
-
-  oFiltersListSelectedItem: any
-  aFiltersList: any[] = []
-
+  
   aSelected: any[] = []
 
-  oIconCache: any = {}
-
-  aVisibleColumns: string[] = aFields.slice()
-  bEnableFilter: boolean = false
+  readonly aFields: string[] = aFields
+  
   oPagination: any = { rowsPerPage: 0 }
   sFilterString: string = ''
   iRowCount: number = 100000
   aColumns: any[] = [
-    { name: 'name', align: 'left', label: 'name', field: 'name', sortable: true, classes: 'name-column', headerClasses: 'name-column', format: (v, r) => ({ value: v, icon: this.oIconCache[r.path] }) },
+    { name: 'name', align: 'left', label: 'name', field: 'name', sortable: true, classes: 'name-column', headerClasses: 'name-column', format: (v, r) => ({ value: v, icon: oApplication.oConfig.oIconCache[r.path] }) },
     { name: 'pid', align: 'right', label: 'pid', field: 'pid', sortable: true, classes: 'pid-column', headerClasses: 'pid-column' },
     { name: 'ppid', align: 'right', label: 'ppid', field: 'ppid', sortable: true, classes: 'ppid-column', headerClasses: 'ppid-column' },
     { name: 'vmem', align: 'right', label: 'vmem', field: 'vmem', sortable: true, format: v => this.fnFormatSize(v), sort: (a, b, rowA, rowB) => parseInt(a, 10) - parseInt(b, 10)  },
@@ -360,6 +393,84 @@ export default class App extends Vue {
     { name: 'utime', align: 'left', label: 'utime', field: 'utime', sortable: true },
     { name: 'stime', align: 'left', label: 'stime', field: 'stime', sortable: true },
   ]
+
+  @Watch('m_oSelectedPreparedFiltersListItem')
+  fnOn_m_oSelectedPreparedFiltersListItem(oNewValue: any, oOldValue: any)
+  {
+    // oNewValue
+    console.log('fnOn_m_oSelectedPreparedFiltersListItem', oNewValue, oOldValue);
+  }
+
+  get aFilteredTasks()
+  {
+    var oThis = this;
+    var oFilter = oThis.oSelectedPreparedFiltersListItem;
+    
+    if (!oFilter) {
+      return oThis.aTasks;
+    }
+
+    return oThis.aTasks.filter((v: any) => {
+      return aFields.some((e: string) => {
+        // console.log('aFilteredTasks', v, e, v[e], oFilter.oFilters[e], oFilter.oFilters);
+        return oFilter.oFilters[e].trim() && ~(v[e]+"").indexOf(oFilter.oFilters[e])
+      })      
+    });
+  }
+
+  get oSelectedPreparedFiltersListItem()
+  {
+    var oThis = this;
+
+    if (!oThis.oConfig.m_oSelectedPreparedFiltersListItem) {
+      return;
+    }
+
+    console.log('oSelectedPreparedFiltersListItem', oThis.oConfig.m_oSelectedPreparedFiltersListItem.value);
+    
+    return oThis.oConfig.aFiltersList.filter((v: any) => 
+      v.sTitle==oThis.oConfig.m_oSelectedPreparedFiltersListItem.value
+    )[0];
+  }
+
+  fnAddFilterListItem()
+  {
+    var oThis = this
+
+    var oItem:any = {
+      sTitle: 'Untitled',
+      oFilters: {}
+    }
+
+    for (var sFieldName of aFields) {
+      oItem.oFilters[sFieldName] = ""
+    }
+    
+    oThis.oConfig.aFiltersList.push(oItem)
+    oThis.oConfig.iSelectFilterListItem = oThis.oConfig.aFiltersList.length-1
+  }
+
+  fnDeleteFilterListItem()
+  {
+    var oThis = this
+
+    oThis.oConfig.aFiltersList.splice(oThis.oConfig.iSelectFilterListItem, 1);
+    oThis.oConfig.iSelectFilterListItem = -1;
+  }
+
+  fnSelectFilterListItem(iItemIndex)
+  {
+    var oThis = this;
+    
+    oThis.oConfig.iSelectFilterListItem = iItemIndex;
+  }
+
+  get oSelectedFiltersListItem()
+  {
+    var oThis = this;
+
+    return oThis.oConfig.aFiltersList[oThis.oConfig.iSelectFilterListItem];
+  }
 
   get aFixedColumns()
   {
@@ -385,12 +496,19 @@ export default class App extends Vue {
   get aPreparedFiltersList()
   {
     var oThis = this;
-    var aResult = oThis.aFiltersList.slice();
+    var aResult = oThis.oConfig.aFiltersList.map((v:any) => {
+      return {
+        label: v.sTitle,
+        value: v.sTitle
+      }
+    });
 
+    /*
     aResult.unshift({
       label: 'None',
       value: 'none'
     });
+    */
     
     return aResult;
   }
@@ -495,17 +613,17 @@ export default class App extends Vue {
         v.icon = '';
 
         return v;
-      })
+      });
 
       Vue.set(oThis, 'aTasks', aTasks);
 
       aTasks.map((v:any) => {
-        if (!oThis.oIconCache[v.path]) {
+        if (!oThis.oConfig.oIconCache[v.path]) {
           iconExtractor.getIcon(v.pid, v.path);
         }
       });
 
-      setTimeout(oThis.fnUpdate, oThis.iRefreshTimeout);
+      setTimeout(oThis.fnUpdate, oThis.oConfig.iRefreshTimeout);
       oThis.bLoading = false;
     });
 
@@ -550,7 +668,13 @@ export default class App extends Vue {
 
   created()
   {
-    var oThis = this;
+    var oThis = oApplication = this;
+
+    oThis.fnLoadConfig();
+
+    oThis.bMounted = true
+
+    oThis.fnSaveConfig(); 
 
     iconExtractor.emitter.on(
       'icon', 
@@ -563,7 +687,7 @@ export default class App extends Vue {
           return;
         }
         // var sPath = oFoundItem.path;
-        oThis.oIconCache[oFoundItem.path] = data.Base64ImageData;
+        oThis.oConfig.oIconCache[oFoundItem.path] = data.Base64ImageData;
         // console.log('fnStartWatcher', sPath, { img:data.Base64ImageData });
         // oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].icon = data.Base64ImageData;
         //}
@@ -575,12 +699,14 @@ export default class App extends Vue {
       }
     );
 
-    oThis.oFiltersListSelectedItem = oThis.aPreparedFiltersList[0];
+    // oThis.m_oSelectedPreparedFiltersListItem = oThis.aPreparedFiltersList[0];
 
     process.on('exit', oThis.fnOnExit);
     process.on('SIGTERM', oThis.fnOnExit);
     process.on('SIGKILL', oThis.fnOnExit);
     window.onbeforeunload = oThis.fnOnExit;
+
+    console.log('oConfig', oThis.oConfig, this);
 
     oThis.fnUpdate();
   }
