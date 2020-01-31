@@ -287,10 +287,16 @@
     position: sticky
     left: calc(266px + 44px + 86px) !important
   td:first-child,
+  th:first-child
+    padding-left: 5px !important
+    padding-right: 20px !important
+  td:first-child,
   th:first-child,
   .name-column,
   .pid-column,
   .ppid-column
+    box-sizing: content-box
+    padding: 0px;
     background-color: #eee !important
     word-break: break-all
     overflow-wrap: break-word
