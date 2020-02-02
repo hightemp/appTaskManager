@@ -1,4 +1,4 @@
-# appTaskManger
+# appTaskManager
 
 ## Installation
 

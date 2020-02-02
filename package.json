@@ -1,11 +1,11 @@
 {
-  "name": "quasar-clean-typescript",
+  "name": "app-task-manager",
   "version": "0.0.1",
-  "description": "Simple Vue.js starter project using Quasar Framework, official typescript extension and couple additional packages for class based components and class based Vuex store modules.",
-  "productName": "Quasar - Clean Typescript Template",
-  "cordovaId": "org.cordova.quasar.app",
+  "description": "",
+  "productName": "",
+  "cordovaId": "org.app-task-manager.app",
   "capacitorId": "",
-  "author": "Xkonti",
+  "author": "hightemp",
   "private": true,
   "scripts": {
     "dev": "quasar dev",
