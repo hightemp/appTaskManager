@@ -11,11 +11,12 @@ process.on('SIGTERM', function() {
     process.exit(4);
 });
 
+/*
 process.on('SIGKILL', function() {
     console.log('SIGKILL')
     process.exit(5);
 });
-
+*/
 const aFields = [
     'pid',
     'ppid',

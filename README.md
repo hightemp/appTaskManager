@@ -1,5 +1,7 @@
 # appTaskManager
 
+![screenshot](/images/screenshot.png)
+
 ## Installation
 
  1. Clone this repository.

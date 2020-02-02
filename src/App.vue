@@ -331,7 +331,9 @@ import { aFields, aFixedColumns } from './mixins/config';
 
 import ListWithFilter from './components/ListWithFilter.vue';
 
+if (process.platform=='win32') {
 var iconExtractor = require('icon-extractor');
+}
 
 import moment from 'moment';
 
@@ -623,11 +625,13 @@ export default class App extends Mixins<Config>(
 
       Vue.set(oThis, 'aTasks', aTasks);
 
-      aTasks.map((v:any) => {
-        if (!oThis.oConfig.oIconCache[v.path]) {
-          iconExtractor.getIcon(v.pid, v.path);
-        }
-      });
+      if (process.platform=='win32') {
+        aTasks.map((v:any) => {
+          if (!oThis.oConfig.oIconCache[v.path]) {
+            iconExtractor.getIcon(v.pid, v.path);
+          }
+        });
+      }
 
       setTimeout(oThis.fnUpdate, oThis.oConfig.iRefreshTimeout);
       oThis.bLoading = false;
@@ -682,34 +686,36 @@ export default class App extends Mixins<Config>(
 
     oThis.fnSaveConfig(); 
 
-    iconExtractor.emitter.on(
-      'icon', 
-      function(data: any) 
-      {
-        //if (data.Context) {
-        var oFoundItem = oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0];
-        
-        if (!oFoundItem) {
-          return;
+    if (process.platform=='win32') {
+      iconExtractor.emitter.on(
+        'icon', 
+        function(data: any) 
+        {
+          //if (data.Context) {
+          var oFoundItem = oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0];
+          
+          if (!oFoundItem) {
+            return;
+          }
+          // var sPath = oFoundItem.path;
+          oThis.oConfig.oIconCache[oFoundItem.path] = data.Base64ImageData;
+          // console.log('fnStartWatcher', sPath, { img:data.Base64ImageData });
+          // oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].icon = data.Base64ImageData;
+          //}
+          /*
+          console.log('Here is my context: ' + data.Context);
+          console.log('Here is the path it was for: ' + data.Path);
+          console.log('Here is the base64 image: ' + data.Base64ImageData);
+          */
         }
-        // var sPath = oFoundItem.path;
-        oThis.oConfig.oIconCache[oFoundItem.path] = data.Base64ImageData;
-        // console.log('fnStartWatcher', sPath, { img:data.Base64ImageData });
-        // oThis.aTasks.filter((vv:any) => vv.pid==data.Context)[0].icon = data.Base64ImageData;
-        //}
-        /*
-        console.log('Here is my context: ' + data.Context);
-        console.log('Here is the path it was for: ' + data.Path);
-        console.log('Here is the base64 image: ' + data.Base64ImageData);
-        */
-      }
-    );
+      );
+    }
 
     // oThis.m_oSelectedPreparedFiltersListItem = oThis.aPreparedFiltersList[0];
 
     process.on('exit', oThis.fnOnExit);
-    process.on('SIGTERM', oThis.fnOnExit);
-    process.on('SIGKILL', oThis.fnOnExit);
+    process.on('SIGTERM', oThis.fnOnExit);   
+    // process.on('SIGKILL', oThis.fnOnExit);
     window.onbeforeunload = oThis.fnOnExit;
 
     console.log('oConfig', oThis.oConfig, this);
