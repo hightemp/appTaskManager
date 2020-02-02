@@ -162,7 +162,7 @@ module.exports = function(ctx) {
 
     // https://quasar.dev/quasar-cli/developing-electron-apps/configuring-electron
     electron: {
-      // bundler: 'builder', // or 'packager'
+      bundler: 'builder', // or 'packager'
 
       extendWebpack(cfg) {
         // do something with Electron main process Webpack cfg
