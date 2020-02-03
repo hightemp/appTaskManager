@@ -1,6 +1,6 @@
 # appTaskManager
 
-![screenshot](/images/screenshot.png)
+![screenshot](/images/screenshot-2.png)
 
 ## Installation
 
