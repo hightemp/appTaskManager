@@ -6,7 +6,9 @@ import { remote } from 'electron';
 import * as fs from 'fs';
 
 // import { keys } from 'ts-transformer-keys';
-import deepcopy from 'deepcopy';
+// import deepcopy from 'deepcopy';
+declare module deepcopy {};
+const deepcopy = require('deepcopy');
 
 // var oWatcherProcess: child_process.ChildProcess;
 const sConfigPath: string = remote.app.getPath("home")+"/appTaskManager.config.json";

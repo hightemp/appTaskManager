@@ -322,9 +322,11 @@ import Vue from 'vue';
 // import Component from 'vue-class-component';
 import { Component, Mixin, Mixins } from 'vue-mixin-decorator';
 import { Watch, Prop } from 'vue-property-decorator'
-import child_process from 'child_process';
+import * as child_process from 'child_process';
 
-import draggable from 'vuedraggable';
+// import draggable from 'vuedraggable';
+declare module draggable {};
+const draggable = require('vuedraggable');
 
 import Config from './mixins/config';
 import { aFields, aFixedColumns } from './mixins/config';
@@ -332,7 +334,7 @@ import { aFields, aFixedColumns } from './mixins/config';
 import ListWithFilter from './components/ListWithFilter.vue';
 
 if (process.platform=='win32') {
-var iconExtractor = require('icon-extractor');
+  var iconExtractor = require('icon-extractor');
 }
 
 import moment from 'moment';
@@ -386,11 +388,11 @@ export default class App extends Mixins<Config>(
   sFilterString: string = ''
   iRowCount: number = 100000
   aColumns: any[] = [
-    { name: 'name', align: 'left', label: 'name', field: 'name', sortable: true, classes: 'name-column', headerClasses: 'name-column', format: (v, r) => ({ value: v, icon: oApplication.oConfig.oIconCache[r.path] }) },
+    { name: 'name', align: 'left', label: 'name', field: 'name', sortable: true, classes: 'name-column', headerClasses: 'name-column', format: (v: any, r: any) => ({ value: v, icon: oApplication.oConfig.oIconCache[r.path] }) },
     { name: 'pid', align: 'right', label: 'pid', field: 'pid', sortable: true, classes: 'pid-column', headerClasses: 'pid-column' },
     { name: 'ppid', align: 'right', label: 'ppid', field: 'ppid', sortable: true, classes: 'ppid-column', headerClasses: 'ppid-column' },
-    { name: 'vmem', align: 'right', label: 'vmem', field: 'vmem', sortable: true, format: v => this.fnFormatSize(v), sort: (a, b, rowA, rowB) => parseInt(a, 10) - parseInt(b, 10)  },
-    { name: 'pmem', align: 'right', label: 'pmem', field: 'pmem', sortable: true, format: v => this.fnFormatSize(v), sort: (a, b, rowA, rowB) => parseInt(a, 10) - parseInt(b, 10) },
+    { name: 'vmem', align: 'right', label: 'vmem', field: 'vmem', sortable: true, format: (v: any) => this.fnFormatSize(v), sort: (a: any, b: any, rowA: any, rowB: any) => parseInt(a, 10) - parseInt(b, 10)  },
+    { name: 'pmem', align: 'right', label: 'pmem', field: 'pmem', sortable: true, format: (v: any) => this.fnFormatSize(v), sort: (a: any, b: any, rowA: any, rowB: any) => parseInt(a, 10) - parseInt(b, 10) },
     { name: 'cpu', align: 'right', label: 'cpu', field: 'cpu', sortable: true },
     { name: 'cmdline', align: 'left', label: 'cmdline', field: 'cmdline', sortable: true },
     { name: 'path', align: 'left', label: 'path', field: 'path', sortable: true },
@@ -411,8 +413,8 @@ export default class App extends Mixins<Config>(
 
   get aFilteredTasks()
   {
-    var oThis = this;
-    var oFilter = oThis.oSelectedPreparedFiltersListItem;
+    var oThis: any = this;
+    var oFilter: any = oThis.oSelectedPreparedFiltersListItem;
     
     if (!oFilter) {
       return oThis.aTasks;
@@ -428,7 +430,7 @@ export default class App extends Mixins<Config>(
 
   get oSelectedPreparedFiltersListItem()
   {
-    var oThis = this;
+    var oThis: any = this;
 
     if (!oThis.oConfig.m_oSelectedPreparedFiltersListItem) {
       return;
@@ -443,7 +445,7 @@ export default class App extends Mixins<Config>(
 
   fnAddFilterListItem()
   {
-    var oThis = this
+    var oThis: any = this
 
     var oItem:any = {
       sTitle: 'Untitled',
@@ -460,50 +462,50 @@ export default class App extends Mixins<Config>(
 
   fnDeleteFilterListItem()
   {
-    var oThis = this
+    var oThis: any = this
 
     oThis.oConfig.aFiltersList.splice(oThis.oConfig.iSelectFilterListItem, 1);
     oThis.oConfig.iSelectFilterListItem = -1;
   }
 
-  fnSelectFilterListItem(iItemIndex)
+  fnSelectFilterListItem(iItemIndex: any)
   {
-    var oThis = this;
+    var oThis: any = this;
     
     oThis.oConfig.iSelectFilterListItem = iItemIndex;
   }
 
   get oSelectedFiltersListItem()
   {
-    var oThis = this;
+    var oThis: any = this;
 
     return oThis.oConfig.aFiltersList[oThis.oConfig.iSelectFilterListItem];
   }
 
   get aFixedColumns()
   {
-    var oThis = this;
+    var oThis: any = this;
     
     return oThis.aColumns.filter((v:any) => ~aFixedColumns.indexOf(v.field))
   }
 
   get aAvailableColumns()
   {
-    var oThis = this;
+    var oThis: any = this;
     
     return oThis.aColumns.filter((v:any) => !~aFixedColumns.indexOf(v.field))
   }
 
   set aAvailableColumns(aColumns: any)
   {
-    var oThis = this;
+    var oThis: any = this;
 
     Vue.set(oThis, 'aColumns', oThis.aFixedColumns.concat(aColumns))
   }
 
   get aPreparedFiltersList()
   {
-    var oThis = this;
+    var oThis: any = this;
     var aResult = oThis.oConfig.aFiltersList.map((v:any) => {
       return {
         label: v.sTitle,
@@ -523,14 +525,14 @@ export default class App extends Mixins<Config>(
 
   fnShowFiltersListEditWindow()
   {
-    var oThis = this;
+    var oThis: any = this;
     
     oThis.bShowFiltersListEditWindow = true;
   }
 
   fnShowOptionsWindow()
   {
-    var oThis = this;
+    var oThis: any = this;
     
     oThis.bShowOptionsWindow = true;
   }
@@ -538,14 +540,14 @@ export default class App extends Mixins<Config>(
   fnFormatSize(iSize: string | number)
   {
     iSize = +iSize;
-    var sz = 'BKMGTP';
-    var factor = Math.floor(((iSize+"").length - 1) / 3);
+    var sz: any = 'BKMGTP';
+    var factor: any = Math.floor(((iSize+"").length - 1) / 3);
     return  Math.round(iSize / Math.pow(1024, factor) * 100) / 100 + sz[factor];
   }
 
   fnGetSelectionDescription() 
   {
-    var oThis = this;
+    var oThis: any = this;
     
     return oThis.aSelected.length === 0 ? 
     '' : 
@@ -563,7 +565,7 @@ export default class App extends Mixins<Config>(
 
   fnTerminateSelected()
   {
-    var oThis = this;
+    var oThis: any = this;
 
     oThis.aSelected.forEach((oItem: any) => {
       // console.log('fnTerminateSelected', oItem);
@@ -588,7 +590,7 @@ export default class App extends Mixins<Config>(
 
   fnStartWatcher(sPath: string)
   {
-    var oThis = this;
+    var oThis: any = this;
 
     if (oWatcherProcess && oWatcherProcess.kill) {
       return;
@@ -614,7 +616,7 @@ export default class App extends Mixins<Config>(
       aArgs[2]
     );
 
-    oWatcherProcess.on('message', (aTasks) => {
+    oWatcherProcess.on('message', (aTasks: any) => {
       aTasks = aTasks.map((v:any) => {
         v.cpu = Math.round(v.cpu*100)/100;
         v.type = 'none';
@@ -652,7 +654,7 @@ export default class App extends Mixins<Config>(
 
   async fnUpdate()
   {
-    var oThis = this;
+    var oThis: any = this;
     
     try {
       oThis.fnStartWatcher(sProcessWatcherPath);
@@ -668,7 +670,7 @@ export default class App extends Mixins<Config>(
 
   fnOnExit(mEvent: any)
   {
-    var oThis = this;
+    var oThis: any = this;
 
     console.log('fnOnExit', arguments);
 
@@ -678,7 +680,7 @@ export default class App extends Mixins<Config>(
 
   created()
   {
-    var oThis = oApplication = this;
+    var oThis: any = oApplication = this;
 
     oThis.fnLoadConfig();
 
