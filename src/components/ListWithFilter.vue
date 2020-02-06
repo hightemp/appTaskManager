@@ -74,10 +74,10 @@ export interface IListItem {
 })
 export default class ListWithFilter extends Vue {
 
-  @Prop({ default: 'col column', type: String }) readonly sClass: string = '';
-  @Prop({ default: '', type: String }) readonly sStyle: string = '';
-  @Prop([Array]) readonly aList: IListItem[] = [];
-  @Prop({ default: -1, type: Number }) readonly iSelectedIndex: number = -1;
+  @Prop({ default: 'col column', type: String }) readonly sClass: string | undefined;
+  @Prop({ default: '', type: String }) readonly sStyle: string | undefined;
+  @Prop([Array]) readonly aList: IListItem[] | undefined;
+  @Prop({ default: -1, type: Number }) readonly iSelectedIndex: number | undefined;
 
   bEnableFilter: boolean = false
   sFilterText: string = ""
