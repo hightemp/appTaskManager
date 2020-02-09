@@ -9,7 +9,7 @@
       :style="bShowSystenInfoPanel ? 'height: 200px !important' : 'height: 43px !important'"
     >
       <div class="col" v-if="bShowSystenInfoPanel">
-
+        
       </div>
       <div class="col-auto row">
         <q-select
@@ -331,6 +331,8 @@ import { aFields, aFixedColumns } from './mixins/config';
 
 import ListWithFilter from './components/ListWithFilter.vue';
 
+import si from 'systeminformation'
+
 if (process.platform=='win32') {
 var iconExtractor = require('icon-extractor');
 }
@@ -370,6 +372,11 @@ export default class App extends Mixins<Config>(
   sOptionsSelectedTab: string = "columns"
 
   bShowSystenInfoPanel: boolean = false
+  aProcessCPUUsage: any[] = []
+  aTitlesOfProcessCPUUsage: any[] = []
+  aProcessMemoryUsage: any[] = []
+  aTitlesOfProcessMemoryUsage: any[] = []
+  iSystemInfoGraphsRefreshInterval: number = 2000
 
   bShowOptionsWindow: boolean = false
   bShowFiltersListEditWindow: boolean = false
@@ -626,12 +633,33 @@ export default class App extends Mixins<Config>(
       Vue.set(oThis, 'aTasks', aTasks);
 
       if (process.platform=='win32') {
-        aTasks.map((v:any) => {
+        aTasks.map((v: any) => {
           if (!oThis.oConfig.oIconCache[v.path]) {
             iconExtractor.getIcon(v.pid, v.path);
           }
         });
       }
+
+      var aProcessCPUUsage: any[] = [];
+      var aProcessMemoryUsage: any[] = [];
+      aTasks.map((v: any) => {
+        var sTitle: string = v.pid + v.cmdline;
+        var iCPUIndex: number = oThis.aTitlesOfProcessCPUUsage.indexOf(sTitle);
+        var iMemoryIndex: number = oThis.aTitlesOfProcessMemoryUsage.indexOf(sTitle);
+
+        if (!~iCPUIndex) {
+          iCPUIndex = oThis.aTitlesOfProcessCPUUsage.push(sTitle) - 1;
+        }
+        aProcessCPUUsage[iCPUIndex] = v.cpu;
+
+        if (!~iMemoryIndex) {
+          iMemoryIndex = oThis.aTitlesOfProcessMemoryUsage.push(sTitle) - 1;
+        }
+        aProcessMemoryUsage[iMemoryIndex] = v.vmem;
+        
+      });
+      oThis.aProcessCPUUsage.push(aProcessCPUUsage);
+      oThis.aProcessMemoryUsage.push(aProcessMemoryUsage);
 
       setTimeout(oThis.fnUpdate, oThis.oConfig.iRefreshTimeout);
       oThis.bLoading = false;
@@ -661,6 +689,27 @@ export default class App extends Mixins<Config>(
 
       // aTasks = await snapshot(...aFields);
       // aTasks = await psList();
+    } catch (_) {
+      console.error(_);
+    }
+  }
+
+  async fnUpdateGraphs()
+  {
+    var oThis = this;
+    
+    try {
+
+      if (oThis.bShowSystenInfoPanel) {
+        /*
+        si
+          .cpu()
+          .then(data => console.log(data))
+          .catch(_ => console.error(_));
+        */
+      }
+
+      setTimeout(oThis.fnUpdateGraphs, oThis.iSystemInfoGraphsRefreshInterval);
     } catch (_) {
       console.error(_);
     }
@@ -721,6 +770,7 @@ export default class App extends Mixins<Config>(
     console.log('oConfig', oThis.oConfig, this);
 
     oThis.fnUpdate();
+    oThis.fnUpdateGraphs();
   }
 }
 </script>
