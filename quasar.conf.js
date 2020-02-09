@@ -61,12 +61,32 @@ module.exports = function(ctx) {
         'QTh',
         'QTr',
         'QTd',
+        'QInput',
+        'QBtnToggle',
+        'QCard',
+        'QCardSection',
+        'QCardActions',
+        'QDialog',
+        'QItemSection',
+        'QItemLabel',
+        'QSelect',
+        'QTabs',
+        'QTab',
+        'QRouteTab',
+        'QTabPanels',
+        'QTabPanel',
+        'QSpace'
       ],
 
-      directives: ['Ripple'],
+      directives: [
+        'Ripple',
+        'ClosePopup'
+      ],
 
       // Quasar plugins
-      plugins: []
+      plugins: [
+        
+      ]
     },
 
     // https://quasar.dev/quasar-cli/cli-documentation/supporting-ie
@@ -76,7 +96,7 @@ module.exports = function(ctx) {
     build: {
       scopeHoisting: true,
       // vueRouterMode: 'history',
-      // showProgress: false,
+      showProgress: true,
       // gzip: true,
       // analyze: true,
       // preloadChunks: false,
@@ -182,7 +202,10 @@ module.exports = function(ctx) {
 
       builder: {
         // https://www.electron.build/configuration/configuration
-        // appId: 'quasar-clean-typescript'
+        appId: 'app-taskmanager',
+        win: {
+          icon: 'src-electron/icons/icon.ico'
+        }
       }
     }
   };
